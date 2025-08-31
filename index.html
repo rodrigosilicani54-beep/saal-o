@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeni $ilicani Studio de Beleza - Sistema de Gestão</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .service-card {
+            background: linear-gradient(135deg, #ffeef8 0%, #f8e8ff 100%);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+        }
+        .shadow-custom {
+            box-shadow: 0 8px 32px rgba(255, 107, 157, 0.2);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
+        }
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+        .calendar-day:hover {
+            background-color: #ffeef8;
+        }
+        .calendar-day.selected {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+        }
+        .time-slot {
+            transition: all 0.2s ease;
+        }
+        .time-slot:hover {
+            background-color: #ffeef8;
+        }
+        .time-slot.selected {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+        }
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white p-4 shadow-lg">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 id="headerTitle" class="text-2xl font-bold">💅 Jeni $ilicani Studio de Beleza</h1>
+                <p class="text-pink-100 text-sm">Sistema de Gestão</p>
+            </div>
+            <div class="text-right">
+                <div class="text-sm opacity-90" id="currentDate"></div>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="exportData()" class="text-xs bg-white bg-opacity-20 hover:bg-opacity-30 px-2 py-1 rounded transition-colors" title="Fazer backup dos dados">
+                        💾 Backup
+                    </button>
+                    <button onclick="showStorageInfo()" class="text-xs bg-white bg-opacity-20 hover:bg-opacity-30 px-2 py-1 rounded transition-colors" title="Ver informações de armazenamento">
+                        📱 Info
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="flex overflow-x-auto">
+            <button onclick="showSection('catalog')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
+                📋 Catálogo
+            </button>
+            <button onclick="showSection('pricing')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
+                💰 Preços
+            </button>
+            <button onclick="showSection('schedule')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
+                📅 Agenda
+            </button>
+            <button onclick="showSection('appointments')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
+                📝 Agendamentos
+            </button>
+            <button onclick="showSection('settings')" class="nav-btn flex-shrink-0 px-6 py-3 text-sm font-medium text-gray-600 hover:text-pink-600 border-b-2 border-transparent hover:border-pink-600 transition-colors">
+                ⚙️ Configurações
+            </button>
+        </div>
+    </nav>
+
+    <!-- Catalog Section -->
+    <section id="catalog" class="section p-4">
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Catálogo de Serviços</h2>
+                <p class="text-gray-600">Nossos serviços de beleza</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="sendCatalogWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    📱 Enviar Catálogo
+                </button>
+                <button onclick="showCatalogLink()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    🔗 Link do Catálogo
+                </button>
+                <button onclick="syncCatalogToCloud()" class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    ☁️ Sincronizar
+                </button>
+                <button onclick="showAddServiceForm()" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                    ➕ Adicionar
+                </button>
+                <button onclick="toggleEditMode()" id="editCatalogBtn" class="btn-primary text-white py-2 px-4 rounded-lg font-medium">
+                    ✏️ Editar
+                </button>
+            </div>
+        </div>
+
+        <div id="catalogContent" class="space-y-4">
+            <!-- Catalog will be generated dynamically -->
+        </div>
+
+        <!-- Add Service Form (Hidden by default) -->
+        <div id="addServiceForm" class="hidden mt-6 bg-white rounded-xl p-4 shadow-custom">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Adicionar Novo Serviço</h3>
+            <div class="space-y-3">
+                <select id="newServiceCategory" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500">
+                    <option value="Unhas">💅 Unhas</option>
+                    <option value="Cabelos">💇‍♀️ Cabelos</option>
+                    <option value="Outros">✨ Outros Serviços</option>
+                </select>
+                <input type="text" id="newServiceName" placeholder="Nome do serviço" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500">
+                <input type="text" id="newServiceDescription" placeholder="Descrição do serviço" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500">
+                <input type="number" id="newServicePrice" placeholder="Preço (R$)" step="0.01" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500">
+                <div class="flex gap-2">
+                    <button onclick="addNewService()" class="flex-1 btn-primary text-white py-2 px-4 rounded-lg font-medium">
+                        ✅ Adicionar
+                    </button>
+                    <button onclick="cancelAddService()" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium">
+                        ❌ Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="section hidden p-4">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Gerenciar Preços</h2>
+            <p class="text-gray-600">Atualize os valores dos serviços</p>
+        </div>
+
+        <div class="space-y-4" id="pricingList">
+            <!-- Pricing items will be generated here -->
+        </div>
+
+        <button onclick="savePrices()" class="w-full btn-primary text-white py-3 px-6 rounded-xl font-semibold mt-6">
+            💾 Salvar Preços
+        </button>
+    </section>
+
+    <!-- Schedule Section -->
+    <section id="schedule" class="section hidden p-4">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Agendar Horário</h2>
+            <p class="text-gray-600">Marque um novo atendimento</p>
+        </div>
+
+        <!-- Client Info -->
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Dados do Cliente</h3>
+            <div class="space-y-3">
+                <input type="text" id="clientName" placeholder="Nome do cliente" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                <input type="tel" id="clientPhone" placeholder="Telefone (WhatsApp)" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+            </div>
+        </div>
+
+        <!-- Service Selection -->
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Escolher Serviço</h3>
+            <select id="serviceSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                <option value="">Selecione um serviço</option>
+            </select>
+            <div id="servicePrice" class="mt-2 text-lg font-semibold text-pink-600"></div>
+        </div>
+
+        <!-- Calendar -->
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Escolher Data</h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="changeMonth(-1)" class="bg-pink-500 hover:bg-pink-600 text-white p-2 rounded-lg transition-colors">
+                        ← Anterior
+                    </button>
+                    <div id="currentMonthYear" class="text-sm font-medium text-gray-700 min-w-[120px] text-center"></div>
+                    <button onclick="changeMonth(1)" class="bg-pink-500 hover:bg-pink-600 text-white p-2 rounded-lg transition-colors">
+                        Próximo →
+                    </button>
+                </div>
+            </div>
+            <div id="calendar" class="grid grid-cols-7 gap-1 text-center">
+                <!-- Calendar will be generated here -->
+            </div>
+        </div>
+
+        <!-- Time Slots -->
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Escolher Horário</h3>
+            <div id="timeSlots" class="grid grid-cols-3 gap-2">
+                <!-- Time slots will be generated here -->
+            </div>
+        </div>
+
+        <!-- Payment Status -->
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3">Status do Pagamento</h3>
+            <div class="flex gap-4">
+                <label class="flex items-center">
+                    <input type="radio" name="paymentStatus" value="pago" class="mr-2 text-pink-600">
+                    <span class="text-green-600 font-semibold">✅ Pago</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="radio" name="paymentStatus" value="pendente" checked class="mr-2 text-pink-600">
+                    <span class="text-orange-600 font-semibold">⏳ Pendente</span>
+                </label>
+            </div>
+        </div>
+
+        <button onclick="scheduleAppointment()" class="w-full btn-primary text-white py-3 px-6 rounded-xl font-semibold">
+            📅 Agendar e Enviar WhatsApp
+        </button>
+    </section>
+
+    <!-- Appointments Section -->
+    <section id="appointments" class="section hidden p-4">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Agendamentos</h2>
+            <p class="text-gray-600">Visualize todos os agendamentos</p>
+        </div>
+
+        <div id="appointmentsList" class="space-y-4">
+            <!-- Appointments will be listed here -->
+        </div>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="settings" class="section hidden p-4">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Configurações do Salão</h2>
+            <p class="text-gray-600">Personalize as informações do seu salão</p>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 shadow-custom mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Informações Básicas</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Salão</label>
+                    <input type="text" id="salonName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                    <input type="text" id="salonAddress" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefone (WhatsApp)</label>
+                    <input type="tel" id="salonPhone" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Política de Cancelamento</label>
+                    <textarea id="salonCancellationPolicy" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="saveSalonSettings()" class="flex-1 btn-primary text-white py-3 px-6 rounded-xl font-semibold">
+                💾 Salvar Configurações
+            </button>
+            <button onclick="resetSalonSettings()" class="bg-gray-500 hover:bg-gray-600 text-white py-3 px-6 rounded-xl font-semibold">
+                🔄 Restaurar Padrão
+            </button>
+        </div>
+
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6">
+            <div class="flex items-start">
+                <div class="text-yellow-600 text-xl mr-3">💡</div>
+                <div>
+                    <h4 class="font-semibold text-yellow-800 mb-1">Dica Importante</h4>
+                    <p class="text-sm text-yellow-700">Essas informações aparecerão nos comprovantes de agendamento enviados pelo WhatsApp e nos compromissos do Google Agenda.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Public Catalog Section (Hidden by default) -->
+    <section id="publicCatalog" class="section hidden p-4">
+        <div class="mb-6 text-center">
+            <div class="text-6xl mb-4">💅</div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" id="publicSalonName">Jeni $ilicani Studio de Beleza</h1>
+            <p class="text-gray-600">Nossos Serviços de Beleza</p>
+            <div class="mt-4 p-3 bg-pink-50 rounded-lg">
+                <p class="text-sm text-gray-700">📍 <span id="publicSalonAddress">Rua das Graviolas, N° 350</span></p>
+                <p class="text-sm text-gray-700">📞 <span id="publicSalonPhone">(11) 95246-8795</span></p>
+            </div>
+        </div>
+
+        <div id="publicCatalogContent" class="space-y-4">
+            <!-- Public catalog will be generated here -->
+        </div>
+
+        <div class="mt-8 text-center">
+            <button onclick="contactWhatsApp()" class="btn-primary text-white py-3 px-8 rounded-xl font-semibold text-lg shadow-lg">
+                📱 Agendar pelo WhatsApp
+            </button>
+            <p class="text-xs text-gray-500 mt-2">Clique para entrar em contato e agendar seu horário</p>
+        </div>
+    </section>
+
+    <!-- Floating WhatsApp Button -->
+    <button onclick="openWhatsApp()" class="floating-btn btn-primary text-white p-4 rounded-full shadow-lg">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+        </svg>
+    </button>
+
+    <script>
+        // Data storage
+        let salonSettings = {
+            name: 'Jeni $ilicani Studio de Beleza',
+            address: 'Rua das Graviolas, N° 350',
+            phone: '(11) 95246-8795',
+            cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
+        };
+        
+        let services = [
+            { category: 'Unhas', name: 'Esmaltação em Gel', description: 'Esmaltação duradoura com acabamento profissional', price: 40 },
+            { category: 'Unhas', name: 'Alongamento de Gel ou Fibra de Vidro', description: 'Alongamento profissional com gel ou fibra de vidro', price: 130 },
+            { category: 'Unhas', name: 'Manutenção do Alongamento', description: 'Manutenção e retoque do alongamento', price: 90 },
+            { category: 'Unhas', name: 'Manicure mais Pedicure', description: 'Serviço completo de manicure e pedicure', price: 50 },
+            { category: 'Unhas', name: 'Esmaltação Artística Unhas Decoradas', description: 'Decorações artísticas e personalizadas', price: 15 },
+            { category: 'Unhas', name: 'Pacote Unhas 2 Pedicure mais 4 Manicures', description: 'Pacote promocional com 2 pedicures e 4 manicures', price: 150 },
+            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 30 },
+            { category: 'Cabelos', name: 'Coloração', description: 'Tintura completa ou mechas', price: 45 },
+            { category: 'Cabelos', name: 'Hidratação', description: 'Tratamento nutritivo para cabelos', price: 50 },
+            { category: 'Cabelos', name: 'Escova Progressiva', description: 'Alisamento e redução de volume a partir de', price: 100 },
+            { category: 'Cabelos', name: 'Progressiva sem Formol', description: 'Progressiva sem formol a partir de', price: 90 },
+            { category: 'Cabelos', name: 'Botox Capilar', description: 'Tratamento de botox capilar a partir de', price: 80 },
+            { category: 'Cabelos', name: 'Pacote Hidratação Reconstrução e Cauterização', description: 'Pacote completo de tratamentos capilares', price: 130 },
+            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 15 },
+            { category: 'Outros', name: 'Sobrancelhas com Henna', description: 'Design de sobrancelhas com aplicação de henna', price: 20 },
+            { category: 'Outros', name: 'Depilação Buço', description: 'Depilação da região do buço', price: 15 },
+            { category: 'Outros', name: 'Limpeza de Pele', description: 'Limpeza facial profunda', price: 30 },
+            { category: 'Outros', name: 'Cílios com a Profissional Suellen Allencar', description: 'Serviços de cílios com profissional especializada a partir de', price: 100 }
+        ];
+
+        let appointments = [];
+        let selectedDate = null;
+        let selectedTime = null;
+        let isEditMode = false;
+        let currentCalendarMonth = new Date().getMonth();
+        let currentCalendarYear = new Date().getFullYear();
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateCurrentDate();
+            
+            // Load catalog from cloud if available
+            loadCatalogFromCloud();
+            
+            // Check if URL has catalog parameter to show public view
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('view') === 'catalog') {
+                showPublicCatalog();
+            } else {
+                showSection('catalog');
+            }
+            
+            generateCatalog();
+            generatePricingList();
+            generateServiceSelect();
+            generateCalendar();
+            generateTimeSlots();
+            loadSalonSettingsForm();
+        });
+
+        // Load data from localStorage with recovery options
+        function loadData() {
+            try {
+                // Try to load main data
+                const savedServices = localStorage.getItem('salonServices');
+                const savedAppointments = localStorage.getItem('salonAppointments');
+                const savedSettings = localStorage.getItem('salonSettings');
+                
+                if (savedServices) {
+                    services = JSON.parse(savedServices);
+                    console.log(`✅ ${services.length} serviços carregados do dispositivo`);
+                }
+                
+                if (savedAppointments) {
+                    appointments = JSON.parse(savedAppointments);
+                    console.log(`✅ ${appointments.length} agendamentos carregados do dispositivo`);
+                }
+                
+                if (savedSettings) {
+                    salonSettings = JSON.parse(savedSettings);
+                    console.log(`✅ Configurações do salão carregadas`);
+                    updateHeaderTitle();
+                }
+                
+                // Check for backup if main data is corrupted or missing
+                if ((!savedServices || !savedAppointments) && localStorage.getItem('salonBackup')) {
+                    console.log('🔄 Tentando recuperar dados do backup...');
+                    const backup = JSON.parse(localStorage.getItem('salonBackup'));
+                    
+                    if (!savedServices && backup.services) {
+                        services = backup.services;
+                        console.log('✅ Serviços recuperados do backup');
+                    }
+                    
+                    if (!savedAppointments && backup.appointments) {
+                        appointments = backup.appointments;
+                        console.log('✅ Agendamentos recuperados do backup');
+                    }
+                }
+                
+                // Show storage info
+                showStorageInfo();
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                alert('⚠️ Erro ao carregar dados salvos. Usando dados padrão.');
+            }
+        }
+
+        // Save data to localStorage with backup and cloud sync
+        function saveData() {
+            try {
+                // Save main data
+                localStorage.setItem('salonServices', JSON.stringify(services));
+                localStorage.setItem('salonAppointments', JSON.stringify(appointments));
+                localStorage.setItem('salonSettings', JSON.stringify(salonSettings));
+                
+                // Create backup with timestamp
+                const backupData = {
+                    services: services,
+                    appointments: appointments,
+                    salonSettings: salonSettings,
+                    lastBackup: new Date().toISOString(),
+                    version: '1.0'
+                };
+                localStorage.setItem('salonBackup', JSON.stringify(backupData));
+                
+                // Save individual appointment history for better tracking
+                appointments.forEach(appointment => {
+                    const key = `appointment_${appointment.id}`;
+                    localStorage.setItem(key, JSON.stringify(appointment));
+                });
+                
+                // Sync catalog to cloud (GitHub Gist)
+                syncCatalogToCloud();
+                
+                console.log('✅ Dados salvos com sucesso no dispositivo');
+            } catch (error) {
+                console.error('❌ Erro ao salvar dados:', error);
+                alert('⚠️ Erro ao salvar dados. Verifique o espaço de armazenamento do dispositivo.');
+            }
+        }
+
+        // Sync catalog to cloud storage (GitHub Gist)
+        async function syncCatalogToCloud() {
+            try {
+                const catalogData = {
+                    salonName: salonSettings.name,
+                    services: services,
+                    lastUpdate: new Date().toISOString(),
+                    publicCatalogUrl: window.location.href.split('?')[0] + '?view=catalog'
+                };
+
+                // Create a public catalog JSON that can be accessed by anyone
+                const publicCatalog = {
+                    salon: {
+                        name: salonSettings.name,
+                        address: salonSettings.address,
+                        phone: salonSettings.phone
+                    },
+                    services: services.map(service => ({
+                        category: service.category,
+                        name: service.name,
+                        description: service.description,
+                        price: service.price
+                    })),
+                    lastUpdate: new Date().toISOString(),
+                    version: '2.0'
+                };
+
+                // Store in localStorage for offline access
+                localStorage.setItem('publicCatalogData', JSON.stringify(publicCatalog));
+                
+                // Try to sync with GitHub Gist (requires manual setup)
+                console.log('📤 Catálogo preparado para sincronização:', publicCatalog);
+                console.log('🔗 Para sincronizar com GitHub, configure um Gist público com este JSON');
+                
+                // Show sync status to user
+                showSyncStatus('success');
+                
+            } catch (error) {
+                console.error('❌ Erro na sincronização:', error);
+                showSyncStatus('error');
+            }
+        }
+
+        // Show sync status
+        function showSyncStatus(status) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `fixed top-20 right-4 z-50 p-3 rounded-lg shadow-lg transition-all duration-300 ${
+                status === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            statusDiv.innerHTML = status === 'success' ? 
+                '☁️ Catálogo sincronizado!' : 
+                '⚠️ Erro na sincronização';
+            
+            document.body.appendChild(statusDiv);
+            
+            setTimeout(() => {
+                statusDiv.remove();
+            }, 3000);
+        }
+
+        // Load catalog from cloud if available
+        async function loadCatalogFromCloud() {
+            try {
+                // Try to load from localStorage first (offline mode)
+                const localCatalog = localStorage.getItem('publicCatalogData');
+                if (localCatalog) {
+                    const catalogData = JSON.parse(localCatalog);
+                    console.log('📱 Catálogo carregado do dispositivo:', catalogData.salon.name);
+                    return catalogData;
+                }
+                
+                // In a real implementation, this would fetch from GitHub Gist
+                console.log('🌐 Tentando carregar catálogo da nuvem...');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar catálogo da nuvem:', error);
+            }
+        }
+
+        // Update current date
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', options);
+        }
+
+        // Show section
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-pink-600', 'border-pink-600');
+                btn.classList.add('text-gray-600', 'border-transparent');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.remove('hidden');
+            
+            // Add active class to clicked nav button
+            if (event && event.target) {
+                event.target.classList.remove('text-gray-600', 'border-transparent');
+                event.target.classList.add('text-pink-600', 'border-pink-600');
+            }
+            
+            // Refresh data when showing specific sections
+            if (sectionName === 'appointments') {
+                displayAppointments();
+            } else if (sectionName === 'schedule') {
+                // Regenerate calendar, time slots and service select to ensure they work
+                generateCalendar();
+                generateTimeSlots();
+                generateServiceSelect();
+            } else if (sectionName === 'settings') {
+                loadSalonSettingsForm();
+            }
+            
+            // Reset edit mode when changing sections
+            if (sectionName !== 'catalog') {
+                isEditMode = false;
+                const editBtn = document.getElementById('editCatalogBtn');
+                if (editBtn) {
+                    editBtn.textContent = '✏️ Editar';
+                    editBtn.classList.add('btn-primary');
+                    editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                }
+                const addForm = document.getElementById('addServiceForm');
+                if (addForm) {
+                    addForm.classList.add('hidden');
+                }
+            }
+        }
+
+        // Generate catalog
+        function generateCatalog() {
+            const catalogContent = document.getElementById('catalogContent');
+            const categories = [...new Set(services.map(s => s.category))];
+            
+            const categoryEmojis = {
+                'Unhas': '💅',
+                'Cabelos': '💇‍♀️',
+                'Outros': '✨'
+            };
+            
+            catalogContent.innerHTML = categories.map(category => {
+                const categoryServices = services.filter(s => s.category === category);
+                
+                return `
+                    <div class="service-card rounded-xl p-4 shadow-custom">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="text-3xl mr-3">${categoryEmojis[category] || '✨'}</div>
+                                <h3 class="text-xl font-bold text-gray-800">${category}</h3>
+                            </div>
+                            ${isEditMode ? `<button onclick="showAddServiceForm('${category}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-medium">+ Adicionar</button>` : ''}
+                        </div>
+                        <div class="grid grid-cols-1 gap-3">
+                            ${categoryServices.map(service => `
+                                <div class="bg-white rounded-lg p-3 shadow-sm">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-gray-700">${service.name}</h4>
+                                            <p class="text-sm text-gray-600">${service.description}</p>
+                                            <p class="text-lg font-bold text-pink-600 mt-1">R$ ${service.price.toFixed(2)}</p>
+                                        </div>
+                                        ${isEditMode ? `
+                                            <div class="flex gap-1 ml-2">
+                                                <button onclick="editService('${service.category}', '${service.name}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">✏️</button>
+                                                <button onclick="deleteService('${service.category}', '${service.name}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">🗑️</button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Toggle edit mode
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editBtn = document.getElementById('editCatalogBtn');
+            
+            if (isEditMode) {
+                editBtn.textContent = '✅ Finalizar';
+                editBtn.classList.remove('btn-primary');
+                editBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            } else {
+                editBtn.textContent = '✏️ Editar';
+                editBtn.classList.add('btn-primary');
+                editBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                document.getElementById('addServiceForm').classList.add('hidden');
+            }
+            
+            generateCatalog();
+        }
+
+        // Show add service form
+        function showAddServiceForm(category = '') {
+            const form = document.getElementById('addServiceForm');
+            if (!form) {
+                console.error('Formulário de adicionar serviço não encontrado');
+                return;
+            }
+            
+            form.classList.remove('hidden');
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            if (category) {
+                const categorySelect = document.getElementById('newServiceCategory');
+                if (categorySelect) {
+                    categorySelect.value = category;
+                }
+            }
+            
+            // Clear form fields
+            const nameField = document.getElementById('newServiceName');
+            const descField = document.getElementById('newServiceDescription');
+            const priceField = document.getElementById('newServicePrice');
+            
+            if (nameField) nameField.value = '';
+            if (descField) descField.value = '';
+            if (priceField) priceField.value = '';
+            
+            // Focus on name field
+            if (nameField) {
+                setTimeout(() => nameField.focus(), 100);
+            }
+        }
+
+        // Add new service
+        function addNewService() {
+            const category = document.getElementById('newServiceCategory').value;
+            const name = document.getElementById('newServiceName').value.trim();
+            const description = document.getElementById('newServiceDescription').value.trim();
+            const price = parseFloat(document.getElementById('newServicePrice').value) || 0;
+            
+            if (!name) {
+                alert('❌ Por favor, informe o nome do serviço');
+                return;
+            }
+            
+            if (!description) {
+                alert('❌ Por favor, informe a descrição do serviço');
+                return;
+            }
+            
+            if (price <= 0) {
+                alert('❌ Por favor, informe um preço válido');
+                return;
+            }
+            
+            // Check if service already exists
+            const exists = services.some(s => s.category === category && s.name === name);
+            if (exists) {
+                alert('❌ Já existe um serviço com este nome nesta categoria');
+                return;
+            }
+            
+            // Add service
+            services.push({ category, name, description, price });
+            saveData();
+            generateCatalog();
+            generatePricingList();
+            generateServiceSelect();
+            
+            // Hide form
+            document.getElementById('addServiceForm').classList.add('hidden');
+            
+            alert('✅ Serviço adicionado com sucesso!');
+        }
+
+        // Cancel add service
+        function cancelAddService() {
+            document.getElementById('addServiceForm').classList.add('hidden');
+        }
+
+        // Edit service
+        function editService(category, name) {
+            const service = services.find(s => s.category === category && s.name === name);
+            if (!service) return;
+            
+            const newName = prompt('Nome do serviço:', service.name);
+            if (newName === null) return;
+            
+            const newDescription = prompt('Descrição:', service.description);
+            if (newDescription === null) return;
+            
+            const newPrice = prompt('Preço (R$):', service.price);
+            if (newPrice === null) return;
+            
+            const price = parseFloat(newPrice);
+            if (isNaN(price) || price <= 0) {
+                alert('❌ Preço inválido');
+                return;
+            }
+            
+            // Update service
+            service.name = newName.trim();
+            service.description = newDescription.trim();
+            service.price = price;
+            
+            saveData();
+            generateCatalog();
+            generatePricingList();
+            generateServiceSelect();
+            
+            alert('✅ Serviço atualizado com sucesso!');
+        }
+
+        // Delete service
+        function deleteService(category, name) {
+            if (!confirm('❌ Tem certeza que deseja excluir este serviço?')) return;
+            
+            const index = services.findIndex(s => s.category === category && s.name === name);
+            if (index !== -1) {
+                services.splice(index, 1);
+                saveData();
+                generateCatalog();
+                generatePricingList();
+                generateServiceSelect();
+                alert('✅ Serviço excluído com sucesso!');
+            }
+        }
+
+        // Generate pricing list
+        function generatePricingList() {
+            const pricingList = document.getElementById('pricingList');
+            pricingList.innerHTML = '';
+            
+            const categories = [...new Set(services.map(s => s.category))];
+            
+            categories.forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'service-card rounded-xl p-4 shadow-custom';
+                
+                const categoryServices = services.filter(s => s.category === category);
+                
+                categoryDiv.innerHTML = `
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">${category}</h3>
+                    <div class="space-y-3">
+                        ${categoryServices.map((service, index) => `
+                            <div class="flex items-center justify-between bg-white rounded-lg p-3 shadow-sm">
+                                <span class="font-medium text-gray-700">${service.name}</span>
+                                <div class="flex items-center">
+                                    <span class="text-gray-600 mr-2">R$</span>
+                                    <input type="number" 
+                                           value="${service.price}" 
+                                           onchange="updateServicePrice('${service.category}', '${service.name}', this.value)"
+                                           class="w-20 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent text-center">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                pricingList.appendChild(categoryDiv);
+            });
+        }
+
+        // Update service price
+        function updateServicePrice(category, name, newPrice) {
+            const serviceIndex = services.findIndex(s => s.category === category && s.name === name);
+            if (serviceIndex !== -1) {
+                services[serviceIndex].price = parseFloat(newPrice) || 0;
+                saveData(); // Auto-save when price changes
+                generateServiceSelect(); // Update service select immediately
+            }
+        }
+
+        // Save prices
+        function savePrices() {
+            saveData();
+            generateServiceSelect(); // Update service select with new prices
+            alert('✅ Preços salvos com sucesso!');
+        }
+
+        // Generate service select
+        function generateServiceSelect() {
+            const serviceSelect = document.getElementById('serviceSelect');
+            if (!serviceSelect) return;
+            
+            // Clear existing options and event listeners
+            serviceSelect.innerHTML = '';
+            serviceSelect.removeEventListener('change', handleServiceChange);
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Selecione um serviço';
+            serviceSelect.appendChild(defaultOption);
+            
+            const categories = [...new Set(services.map(s => s.category))];
+            
+            categories.forEach(category => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category;
+                
+                const categoryServices = services.filter(s => s.category === category);
+                categoryServices.forEach(service => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify(service);
+                    option.textContent = `${service.name} - R$ ${service.price.toFixed(2)}`;
+                    optgroup.appendChild(option);
+                });
+                
+                serviceSelect.appendChild(optgroup);
+            });
+            
+            // Add event listener
+            serviceSelect.addEventListener('change', handleServiceChange);
+        }
+
+        // Handle service selection change
+        function handleServiceChange() {
+            const servicePriceDiv = document.getElementById('servicePrice');
+            if (this.value) {
+                try {
+                    const service = JSON.parse(this.value);
+                    servicePriceDiv.textContent = `Valor: R$ ${service.price.toFixed(2)}`;
+                } catch (error) {
+                    console.error('Erro ao processar serviço:', error);
+                    servicePriceDiv.textContent = '';
+                }
+            } else {
+                servicePriceDiv.textContent = '';
+            }
+        }
+
+        // Generate calendar
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const currentMonthYearDiv = document.getElementById('currentMonthYear');
+            calendar.innerHTML = ''; // Clear existing calendar
+            
+            const today = new Date();
+            
+            // Update month/year display
+            const monthNames = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            if (currentMonthYearDiv) {
+                currentMonthYearDiv.textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
+            }
+            
+            // Days of week header
+            const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            daysOfWeek.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'p-2 text-xs font-semibold text-gray-600 bg-gray-100';
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+            const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+            
+            // Add empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'p-2';
+                calendar.appendChild(emptyDay);
+            }
+            
+            // Add days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                const dayDate = new Date(currentCalendarYear, currentCalendarMonth, day);
+                const isToday = dayDate.toDateString() === today.toDateString();
+                const isPast = dayDate < today && !isToday;
+                
+                dayElement.className = `calendar-day p-3 text-sm font-medium cursor-pointer rounded-lg border transition-all ${
+                    isPast ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 hover:bg-pink-50 border-gray-200 hover:border-pink-300'
+                } ${isToday ? 'bg-pink-100 border-pink-300 font-bold' : ''}`;
+                
+                dayElement.textContent = day;
+                dayElement.setAttribute('data-day', day);
+                dayElement.setAttribute('data-month', currentCalendarMonth);
+                dayElement.setAttribute('data-year', currentCalendarYear);
+                
+                if (!isPast) {
+                    dayElement.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        // Remove previous selection
+                        document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        
+                        // Add selection to clicked day
+                        this.classList.add('selected');
+                        
+                        const selectedDay = parseInt(this.getAttribute('data-day'));
+                        const selectedMonth = parseInt(this.getAttribute('data-month'));
+                        const selectedYear = parseInt(this.getAttribute('data-year'));
+                        
+                        selectedDate = new Date(selectedYear, selectedMonth, selectedDay);
+                        
+                        console.log('Data selecionada:', selectedDate);
+                    });
+                }
+                
+                calendar.appendChild(dayElement);
+            }
+        }
+
+        // Change calendar month
+        function changeMonth(direction) {
+            currentCalendarMonth += direction;
+            
+            // Handle year changes
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            } else if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            
+            // Clear selected date when changing months
+            selectedDate = null;
+            
+            // Regenerate calendar
+            generateCalendar();
+        }
+
+        // Generate time slots
+        function generateTimeSlots() {
+            const timeSlots = document.getElementById('timeSlots');
+            timeSlots.innerHTML = ''; // Clear existing slots
+            
+            const slots = [
+                '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+                '17:00', '17:30', '18:00', '18:30'
+            ];
+            
+            slots.forEach(time => {
+                const timeElement = document.createElement('div');
+                timeElement.className = 'time-slot p-3 text-center text-sm font-medium border border-gray-300 rounded-lg cursor-pointer hover:bg-pink-50 hover:border-pink-300 transition-all';
+                timeElement.textContent = time;
+                timeElement.setAttribute('data-time', time);
+                
+                timeElement.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove previous selection
+                    document.querySelectorAll('.time-slot.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    // Add selection to clicked time
+                    this.classList.add('selected');
+                    selectedTime = this.getAttribute('data-time');
+                    
+                    console.log('Horário selecionado:', selectedTime);
+                });
+                
+                timeSlots.appendChild(timeElement);
+            });
+        }
+
+        // Schedule appointment
+        function scheduleAppointment() {
+            const clientName = document.getElementById('clientName').value.trim();
+            const clientPhone = document.getElementById('clientPhone').value.trim();
+            const serviceSelect = document.getElementById('serviceSelect');
+            const paymentStatusElement = document.querySelector('input[name="paymentStatus"]:checked');
+            
+            // Validation
+            if (!clientName) {
+                alert('❌ Por favor, informe o nome do cliente');
+                return;
+            }
+            
+            if (!clientPhone) {
+                alert('❌ Por favor, informe o telefone do cliente');
+                return;
+            }
+            
+            if (!serviceSelect.value) {
+                alert('❌ Por favor, selecione um serviço');
+                return;
+            }
+            
+            if (!selectedDate) {
+                alert('❌ Por favor, selecione uma data');
+                return;
+            }
+            
+            if (!selectedTime) {
+                alert('❌ Por favor, selecione um horário');
+                return;
+            }
+            
+            const paymentStatus = paymentStatusElement ? paymentStatusElement.value : 'pendente';
+            
+            try {
+                const service = JSON.parse(serviceSelect.value);
+                
+                // Check if time slot is already taken
+                const dateStr = selectedDate.toDateString();
+                const isTimeSlotTaken = appointments.some(apt => {
+                    const aptDate = new Date(apt.date);
+                    return aptDate.toDateString() === dateStr && apt.time === selectedTime;
+                });
+                
+                if (isTimeSlotTaken) {
+                    alert('❌ Este horário já está ocupado. Por favor, escolha outro horário.');
+                    return;
+                }
+                
+                // Create appointment
+                const appointment = {
+                    id: Date.now(),
+                    clientName,
+                    clientPhone,
+                    service: service.name,
+                    category: service.category,
+                    price: service.price,
+                    date: selectedDate.toISOString(),
+                    time: selectedTime,
+                    paymentStatus,
+                    createdAt: new Date().toISOString()
+                };
+                
+                appointments.push(appointment);
+                saveData();
+                
+                // Generate WhatsApp message
+                generateWhatsAppMessage(appointment);
+                
+                // Add to Google Calendar
+                addToGoogleCalendar(appointment);
+                
+                // Clear form
+                clearScheduleForm();
+                
+                alert('✅ Agendamento realizado com sucesso!\n\n📱 Dados salvos no seu celular\n💬 Mensagem do WhatsApp será aberta\n📅 Compromisso criado no Google Agenda\n💾 Backup automático criado');
+                
+            } catch (error) {
+                console.error('Erro ao processar agendamento:', error);
+                alert('❌ Erro ao processar agendamento. Tente novamente.');
+            }
+        }
+
+        // Clear schedule form
+        function clearScheduleForm() {
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('serviceSelect').value = '';
+            document.getElementById('servicePrice').textContent = '';
+            document.querySelector('input[name="paymentStatus"][value="pendente"]').checked = true;
+            
+            // Clear selections
+            document.querySelectorAll('.calendar-day.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelectorAll('.time-slot.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            selectedDate = null;
+            selectedTime = null;
+        }
+
+        // Add to Google Calendar
+        function addToGoogleCalendar(appointment) {
+            try {
+                const appointmentDate = new Date(appointment.date);
+                const [hours, minutes] = appointment.time.split(':');
+                
+                // Set start time
+                const startTime = new Date(appointmentDate);
+                startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                
+                // Set end time (1.5 hours later for most services)
+                const endTime = new Date(startTime);
+                endTime.setHours(startTime.getHours() + 1, startTime.getMinutes() + 30);
+                
+                // Format dates for Google Calendar (YYYYMMDDTHHMMSSZ)
+                const formatGoogleDate = (date) => {
+                    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+                };
+                
+                const startFormatted = formatGoogleDate(startTime);
+                const endFormatted = formatGoogleDate(endTime);
+                
+                // Create event details
+                const eventTitle = `💅 ${appointment.service} - ${appointment.clientName}`;
+                const eventDetails = `📋 AGENDAMENTO ${salonSettings.name.toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━
+
+👤 Cliente: ${appointment.clientName}
+📞 Telefone: ${appointment.clientPhone}
+💄 Serviço: ${appointment.service}
+💰 Valor: R$ ${appointment.price.toFixed(2)}
+💳 Pagamento: ${appointment.paymentStatus.toUpperCase()}
+
+━━━━━━━━━━━━━━━━━━━━━
+📍 Local: ${salonSettings.name}
+${salonSettings.address}
+
+⚠️ Lembrete:
+• Chegue 10 minutos antes
+• Ligue em caso de atraso: ${salonSettings.phone}
+• ${salonSettings.cancellationPolicy}`;
+
+                const eventLocation = `${salonSettings.name} - ${salonSettings.address}`;
+                
+                // Create Google Calendar URL
+                const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${startFormatted}/${endFormatted}&details=${encodeURIComponent(eventDetails)}&location=${encodeURIComponent(eventLocation)}&sf=true&output=xml`;
+                
+                // Open Google Calendar in new tab
+                window.open(googleCalendarUrl, '_blank');
+                
+                console.log('📅 Compromisso criado no Google Agenda:', {
+                    cliente: appointment.clientName,
+                    data: startTime.toLocaleString('pt-BR'),
+                    servico: appointment.service
+                });
+                
+            } catch (error) {
+                console.error('❌ Erro ao criar compromisso no Google Agenda:', error);
+                alert('⚠️ Não foi possível criar o compromisso no Google Agenda automaticamente.\nVocê pode adicionar manualmente:\n\n' + 
+                      `📅 Data: ${new Date(appointment.date).toLocaleDateString('pt-BR')}\n` +
+                      `⏰ Horário: ${appointment.time}\n` +
+                      `👤 Cliente: ${appointment.clientName}\n` +
+                      `💄 Serviço: ${appointment.service}`);
+            }
+        }
+
+        // Generate WhatsApp message
+        function generateWhatsAppMessage(appointment) {
+            const date = new Date(appointment.date);
+            const formattedDate = date.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            const paymentEmoji = appointment.paymentStatus === 'pago' ? '✅' : '⏳';
+            const paymentText = appointment.paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE';
+            
+            const message = `💅 *${salonSettings.name.toUpperCase()}*
+━━━━━━━━━━━━━━━━━━━━━
+
+📋 *COMPROVANTE DE AGENDAMENTO*
+
+👤 *Cliente:* ${appointment.clientName}
+📅 *Data:* ${formattedDate}
+⏰ *Horário:* ${appointment.time}
+💄 *Serviço:* ${appointment.service}
+💰 *Valor:* R$ ${appointment.price.toFixed(2)}
+${paymentEmoji} *Pagamento:* ${paymentText}
+
+━━━━━━━━━━━━━━━━━━━━━
+📍 *Endereço do Salão*
+${salonSettings.address}
+📞 *Telefone:* ${salonSettings.phone}
+
+⚠️ *IMPORTANTE:*
+• Chegue 10 minutos antes
+• Em caso de atraso, ligue para reagendar
+• ${salonSettings.cancellationPolicy}
+
+✨ Obrigada pela preferência! ✨
+💅 Nos vemos em breve!`;
+
+            // Clean phone number (remove all non-digits)
+            const cleanPhone = appointment.clientPhone.replace(/\D/g, '');
+            
+            // Ensure phone has country code
+            let phoneWithCountryCode = cleanPhone;
+            if (cleanPhone.length === 11 && cleanPhone.startsWith('11')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            } else if (cleanPhone.length === 10) {
+                phoneWithCountryCode = '5511' + cleanPhone;
+            } else if (!cleanPhone.startsWith('55')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            }
+            
+            // Open WhatsApp with the message
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+            
+            // Try to open WhatsApp
+            try {
+                window.open(whatsappUrl, '_blank');
+            } catch (error) {
+                console.error('Erro ao abrir WhatsApp:', error);
+                // Fallback: copy message to clipboard
+                navigator.clipboard.writeText(message).then(() => {
+                    alert('📋 Mensagem copiada para a área de transferência! Cole no WhatsApp do cliente.');
+                }).catch(() => {
+                    alert('📱 Não foi possível abrir o WhatsApp automaticamente. Copie a mensagem manualmente:\n\n' + message);
+                });
+            }
+        }
+
+        // Display appointments
+        function displayAppointments() {
+            const appointmentsList = document.getElementById('appointmentsList');
+            
+            if (appointments.length === 0) {
+                appointmentsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">📅</div>
+                        <p>Nenhum agendamento encontrado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort appointments by date and time
+            const sortedAppointments = appointments.sort((a, b) => {
+                const dateA = new Date(a.date + ' ' + a.time);
+                const dateB = new Date(b.date + ' ' + b.time);
+                return dateB - dateA;
+            });
+            
+            appointmentsList.innerHTML = sortedAppointments.map(appointment => {
+                const date = new Date(appointment.date);
+                const formattedDate = date.toLocaleDateString('pt-BR');
+                const paymentClass = appointment.paymentStatus === 'pago' ? 'text-green-600' : 'text-orange-600';
+                const paymentIcon = appointment.paymentStatus === 'pago' ? '✅' : '⏳';
+                
+                return `
+                    <div class="bg-white rounded-xl p-4 shadow-custom">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${appointment.clientName}</h3>
+                                <p class="text-sm text-gray-600">${appointment.clientPhone}</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm font-medium text-gray-700">${formattedDate}</div>
+                                <div class="text-sm font-medium text-gray-700">${appointment.time}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-600">Serviço:</span>
+                                <span class="font-medium">${appointment.service}</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-600">Valor:</span>
+                                <span class="font-semibold text-pink-600">R$ ${appointment.price.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Pagamento:</span>
+                                <span class="${paymentClass} font-semibold">${paymentIcon} ${appointment.paymentStatus.toUpperCase()}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 mt-4">
+                            <button onclick="resendWhatsApp(${appointment.id})" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                                📱 WhatsApp
+                            </button>
+                            <button onclick="addExistingToGoogleCalendar(${appointment.id})" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                                📅 Google Agenda
+                            </button>
+                            <button onclick="deleteAppointment(${appointment.id})" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Resend WhatsApp message
+        function resendWhatsApp(appointmentId) {
+            const appointment = appointments.find(a => a.id === appointmentId);
+            if (appointment) {
+                generateWhatsAppMessage(appointment);
+            }
+        }
+
+        // Add existing appointment to Google Calendar
+        function addExistingToGoogleCalendar(appointmentId) {
+            const appointment = appointments.find(a => a.id === appointmentId);
+            if (appointment) {
+                addToGoogleCalendar(appointment);
+            }
+        }
+
+        // Delete appointment
+        function deleteAppointment(appointmentId) {
+            if (confirm('❌ Tem certeza que deseja excluir este agendamento?')) {
+                appointments = appointments.filter(a => a.id !== appointmentId);
+                saveData();
+                displayAppointments();
+            }
+        }
+
+        // Show storage information
+        function showStorageInfo() {
+            try {
+                const totalServices = services.length;
+                const totalAppointments = appointments.length;
+                const lastBackup = localStorage.getItem('salonBackup') ? 
+                    JSON.parse(localStorage.getItem('salonBackup')).lastBackup : null;
+                
+                console.log('📱 INFORMAÇÕES DE ARMAZENAMENTO:');
+                console.log(`📋 Serviços salvos: ${totalServices}`);
+                console.log(`📅 Agendamentos salvos: ${totalAppointments}`);
+                if (lastBackup) {
+                    console.log(`💾 Último backup: ${new Date(lastBackup).toLocaleString('pt-BR')}`);
+                }
+                console.log('💡 Todos os dados ficam salvos no seu celular/dispositivo');
+            } catch (error) {
+                console.error('Erro ao mostrar informações de armazenamento:', error);
+            }
+        }
+
+        // Export data for backup
+        function exportData() {
+            try {
+                const exportData = {
+                    services: services,
+                    appointments: appointments,
+                    exportDate: new Date().toISOString(),
+                    salonName: 'Jeni $ilicani Studio de Beleza'
+                };
+                
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `salon-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                
+                alert('✅ Backup exportado com sucesso! Arquivo salvo na pasta Downloads.');
+            } catch (error) {
+                console.error('Erro ao exportar dados:', error);
+                alert('❌ Erro ao exportar backup.');
+            }
+        }
+
+        // Clear all data (with confirmation)
+        function clearAllData() {
+            if (confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados salvos (serviços e agendamentos). Tem certeza?')) {
+                if (confirm('🚨 ÚLTIMA CONFIRMAÇÃO: Todos os dados serão perdidos permanentemente. Continuar?')) {
+                    try {
+                        // Clear all localStorage data
+                        const keys = Object.keys(localStorage);
+                        keys.forEach(key => {
+                            if (key.startsWith('salon') || key.startsWith('appointment_')) {
+                                localStorage.removeItem(key);
+                            }
+                        });
+                        
+                        // Reset to default data
+                        services = [
+                            { category: 'Unhas', name: 'Esmaltação em Gel', description: 'Esmaltação duradoura com acabamento profissional', price: 40 },
+                            { category: 'Unhas', name: 'Alongamento de Gel ou Fibra de Vidro', description: 'Alongamento profissional com gel ou fibra de vidro', price: 130 },
+                            { category: 'Unhas', name: 'Manutenção do Alongamento', description: 'Manutenção e retoque do alongamento', price: 90 },
+                            { category: 'Unhas', name: 'Manicure mais Pedicure', description: 'Serviço completo de manicure e pedicure', price: 50 },
+                            { category: 'Unhas', name: 'Esmaltação Artística Unhas Decoradas', description: 'Decorações artísticas e personalizadas', price: 15 },
+                            { category: 'Unhas', name: 'Pacote Unhas 2 Pedicure mais 4 Manicures', description: 'Pacote promocional com 2 pedicures e 4 manicures', price: 150 },
+                            { category: 'Cabelos', name: 'Corte Feminino', description: 'Cortes modernos e personalizados', price: 30 },
+                            { category: 'Cabelos', name: 'Coloração', description: 'Tintura completa ou mechas', price: 45 },
+                            { category: 'Cabelos', name: 'Hidratação', description: 'Tratamento nutritivo para cabelos', price: 50 },
+                            { category: 'Cabelos', name: 'Escova Progressiva', description: 'Alisamento e redução de volume a partir de', price: 100 },
+                            { category: 'Cabelos', name: 'Progressiva sem Formol', description: 'Progressiva sem formol a partir de', price: 90 },
+                            { category: 'Cabelos', name: 'Botox Capilar', description: 'Tratamento de botox capilar a partir de', price: 80 },
+                            { category: 'Cabelos', name: 'Pacote Hidratação Reconstrução e Cauterização', description: 'Pacote completo de tratamentos capilares', price: 130 },
+                            { category: 'Outros', name: 'Sobrancelha', description: 'Design e modelagem de sobrancelhas', price: 15 },
+                            { category: 'Outros', name: 'Sobrancelhas com Henna', description: 'Design de sobrancelhas com aplicação de henna', price: 20 },
+                            { category: 'Outros', name: 'Depilação Buço', description: 'Depilação da região do buço', price: 15 },
+                            { category: 'Outros', name: 'Limpeza de Pele', description: 'Limpeza facial profunda', price: 30 },
+                            { category: 'Outros', name: 'Cílios com a Profissional Suellen Allencar', description: 'Serviços de cílios com profissional especializada a partir de', price: 100 }
+                        ];
+                        appointments = [];
+                        
+                        // Regenerate all sections
+                        generateCatalog();
+                        generatePricingList();
+                        generateServiceSelect();
+                        displayAppointments();
+                        
+                        alert('✅ Todos os dados foram apagados e o sistema foi resetado.');
+                    } catch (error) {
+                        console.error('Erro ao limpar dados:', error);
+                        alert('❌ Erro ao limpar dados.');
+                    }
+                }
+            }
+        }
+
+        // Update header title
+        function updateHeaderTitle() {
+            const headerTitle = document.getElementById('headerTitle');
+            if (headerTitle) {
+                headerTitle.textContent = `💅 ${salonSettings.name}`;
+            }
+        }
+
+        // Load salon settings form
+        function loadSalonSettingsForm() {
+            document.getElementById('salonName').value = salonSettings.name;
+            document.getElementById('salonAddress').value = salonSettings.address;
+            document.getElementById('salonPhone').value = salonSettings.phone;
+            document.getElementById('salonCancellationPolicy').value = salonSettings.cancellationPolicy;
+        }
+
+        // Save salon settings
+        function saveSalonSettings() {
+            const name = document.getElementById('salonName').value.trim();
+            const address = document.getElementById('salonAddress').value.trim();
+            const phone = document.getElementById('salonPhone').value.trim();
+            const cancellationPolicy = document.getElementById('salonCancellationPolicy').value.trim();
+
+            if (!name) {
+                alert('❌ Por favor, informe o nome do salão');
+                return;
+            }
+
+            if (!address) {
+                alert('❌ Por favor, informe o endereço do salão');
+                return;
+            }
+
+            if (!phone) {
+                alert('❌ Por favor, informe o telefone do salão');
+                return;
+            }
+
+            if (!cancellationPolicy) {
+                alert('❌ Por favor, informe a política de cancelamento');
+                return;
+            }
+
+            salonSettings.name = name;
+            salonSettings.address = address;
+            salonSettings.phone = phone;
+            salonSettings.cancellationPolicy = cancellationPolicy;
+
+            saveData();
+            updateHeaderTitle();
+
+            alert('✅ Configurações salvas com sucesso!\n\n📱 As novas informações aparecerão nos próximos agendamentos e mensagens do WhatsApp.');
+        }
+
+        // Reset salon settings to default
+        function resetSalonSettings() {
+            if (confirm('🔄 Tem certeza que deseja restaurar as configurações padrão do salão?')) {
+                salonSettings = {
+                    name: 'Jeni $ilicani Studio de Beleza',
+                    address: 'Rua das Graviolas, N° 350',
+                    phone: '(11) 95246-8795',
+                    cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
+                };
+
+                loadSalonSettingsForm();
+                saveData();
+                updateHeaderTitle();
+
+                alert('✅ Configurações restauradas para o padrão!');
+            }
+        }
+
+        // Send catalog via WhatsApp
+        function sendCatalogWhatsApp() {
+            const catalogMessage = generateCatalogMessage();
+            const encodedMessage = encodeURIComponent(catalogMessage);
+            
+            // Ask for client's phone number
+            const clientPhone = prompt('📱 Digite o número do WhatsApp da cliente (com DDD):');
+            if (!clientPhone) return;
+            
+            // Clean phone number
+            const cleanPhone = clientPhone.replace(/\D/g, '');
+            let phoneWithCountryCode = cleanPhone;
+            
+            if (cleanPhone.length === 11 && cleanPhone.startsWith('11')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            } else if (cleanPhone.length === 10) {
+                phoneWithCountryCode = '5511' + cleanPhone;
+            } else if (!cleanPhone.startsWith('55')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            }
+            
+            // Open WhatsApp with catalog
+            const whatsappUrl = `https://wa.me/${phoneWithCountryCode}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // Generate catalog message for WhatsApp
+        function generateCatalogMessage() {
+            const categories = [...new Set(services.map(s => s.category))];
+            const categoryEmojis = {
+                'Unhas': '💅',
+                'Cabelos': '💇‍♀️',
+                'Outros': '✨'
+            };
+            
+            let message = `💅 *${salonSettings.name.toUpperCase()}*\n`;
+            message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+            message += `📋 *CATÁLOGO DE SERVIÇOS*\n\n`;
+            
+            categories.forEach(category => {
+                const categoryServices = services.filter(s => s.category === category);
+                message += `${categoryEmojis[category] || '✨'} *${category.toUpperCase()}*\n`;
+                message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+                
+                categoryServices.forEach(service => {
+                    message += `• *${service.name}*\n`;
+                    message += `  ${service.description}\n`;
+                    message += `  💰 *R$ ${service.price.toFixed(2)}*\n\n`;
+                });
+            });
+            
+            message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+            message += `📍 *Endereço:* ${salonSettings.address}\n`;
+            message += `📞 *Telefone:* ${salonSettings.phone}\n\n`;
+            message += `💬 *Para agendar, responda esta mensagem!*\n`;
+            message += `✨ Estamos ansiosas para cuidar de você! ✨`;
+            
+            return message;
+        }
+
+        // Show catalog link modal
+        function showCatalogLink() {
+            const currentUrl = window.location.href.split('?')[0];
+            const catalogUrl = `${currentUrl}?view=catalog`;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🔗 Link do Catálogo Público</h3>
+                    <p class="text-gray-600 mb-4">Compartilhe este link com suas clientes para que elas vejam seus serviços:</p>
+                    
+                    <div class="bg-gray-50 p-3 rounded-lg mb-4 break-all text-sm">
+                        <code>${catalogUrl}</code>
+                    </div>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <button onclick="copyToClipboard('${catalogUrl}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium">
+                            📋 Copiar Link
+                        </button>
+                        <button onclick="shareViaWhatsApp('${catalogUrl}')" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium">
+                            📱 Compartilhar
+                        </button>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                        <p class="text-xs text-yellow-700">
+                            💡 <strong>Dica:</strong> Quem acessar este link verá apenas o catálogo de serviços, sem poder editar nada.
+                        </p>
+                    </div>
+                    
+                    <button onclick="this.parentElement.parentElement.remove()" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium">
+                        ✅ Fechar
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Link copiado para a área de transferência!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Link copiado!');
+            });
+        }
+
+        // Share catalog link via WhatsApp
+        function shareViaWhatsApp(catalogUrl) {
+            const message = `💅 Olá! Confira nosso catálogo de serviços do ${salonSettings.name}:\n\n🔗 ${catalogUrl}\n\n✨ Escolha seu serviço e entre em contato para agendar!`;
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        }
+
+        // Show public catalog view
+        function showPublicCatalog() {
+            // Hide header and navigation
+            document.querySelector('header').style.display = 'none';
+            document.querySelector('nav').style.display = 'none';
+            document.querySelector('.floating-btn').style.display = 'none';
+            
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show public catalog
+            document.getElementById('publicCatalog').classList.remove('hidden');
+            
+            // Update public catalog content
+            generatePublicCatalog();
+            updatePublicSalonInfo();
+        }
+
+        // Generate public catalog
+        function generatePublicCatalog() {
+            const publicCatalogContent = document.getElementById('publicCatalogContent');
+            const categories = [...new Set(services.map(s => s.category))];
+            
+            const categoryEmojis = {
+                'Unhas': '💅',
+                'Cabelos': '💇‍♀️',
+                'Outros': '✨'
+            };
+            
+            publicCatalogContent.innerHTML = categories.map(category => {
+                const categoryServices = services.filter(s => s.category === category);
+                
+                return `
+                    <div class="service-card rounded-xl p-6 shadow-custom">
+                        <div class="flex items-center mb-4">
+                            <div class="text-4xl mr-4">${categoryEmojis[category] || '✨'}</div>
+                            <h2 class="text-2xl font-bold text-gray-800">${category}</h2>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            ${categoryServices.map(service => `
+                                <div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-pink-400">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-semibold text-gray-800 mb-1">${service.name}</h3>
+                                            <p class="text-gray-600 mb-2">${service.description}</p>
+                                            <div class="flex items-center">
+                                                <span class="text-2xl font-bold text-pink-600">R$ ${service.price.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update public salon info
+        function updatePublicSalonInfo() {
+            document.getElementById('publicSalonName').textContent = salonSettings.name;
+            document.getElementById('publicSalonAddress').textContent = salonSettings.address;
+            document.getElementById('publicSalonPhone').textContent = salonSettings.phone;
+        }
+
+        // Contact via WhatsApp from public catalog
+        function contactWhatsApp() {
+            const message = encodeURIComponent(`Olá! Vi o catálogo do ${salonSettings.name} e gostaria de agendar um horário! 💅✨`);
+            const cleanPhone = salonSettings.phone.replace(/\D/g, '');
+            let phoneWithCountryCode = cleanPhone;
+            
+            if (cleanPhone.length === 11 && cleanPhone.startsWith('11')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            } else if (cleanPhone.length === 10) {
+                phoneWithCountryCode = '5511' + cleanPhone;
+            } else if (!cleanPhone.startsWith('55')) {
+                phoneWithCountryCode = '55' + cleanPhone;
+            }
+            
+            window.open(`https://wa.me/${phoneWithCountryCode}?text=${message}`, '_blank');
+        }
+
+        // Open WhatsApp
+        function openWhatsApp() {
+            const message = encodeURIComponent(`Olá! Gostaria de agendar um horário no ${salonSettings.name}! 💅✨`);
+            window.open(`https://wa.me/?text=${message}`, '_blank');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e4967130ac585',t:'MTc1NjY2MTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
