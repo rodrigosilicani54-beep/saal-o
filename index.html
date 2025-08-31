@@ -381,12 +381,22 @@
                 showSection('catalog');
             }
             
+            // Generate all components with updated data
             generateCatalog();
             generatePricingList();
             generateServiceSelect();
             generateCalendar();
             generateTimeSlots();
             loadSalonSettingsForm();
+            
+            // Ensure public catalog is also updated
+            generatePublicCatalog();
+            updatePublicSalonInfo();
+            
+            // Auto-sync on startup
+            setTimeout(() => {
+                syncCatalogToCloud();
+            }, 1000);
         });
 
         // Load data from localStorage with recovery options
@@ -452,7 +462,7 @@
                     appointments: appointments,
                     salonSettings: salonSettings,
                     lastBackup: new Date().toISOString(),
-                    version: '1.0'
+                    version: '2.0'
                 };
                 localStorage.setItem('salonBackup', JSON.stringify(backupData));
                 
@@ -462,10 +472,15 @@
                     localStorage.setItem(key, JSON.stringify(appointment));
                 });
                 
-                // Sync catalog to cloud (GitHub Gist)
+                // Update all system components immediately
+                generateCatalog();
+                generatePricingList();
+                generateServiceSelect();
+                
+                // Sync catalog to cloud
                 syncCatalogToCloud();
                 
-                console.log('✅ Dados salvos com sucesso no dispositivo');
+                console.log('✅ Dados salvos e sincronizados em todo o sistema');
             } catch (error) {
                 console.error('❌ Erro ao salvar dados:', error);
                 alert('⚠️ Erro ao salvar dados. Verifique o espaço de armazenamento do dispositivo.');
@@ -502,9 +517,14 @@
                 // Store in localStorage for offline access
                 localStorage.setItem('publicCatalogData', JSON.stringify(publicCatalog));
                 
-                // Try to sync with GitHub Gist (requires manual setup)
-                console.log('📤 Catálogo preparado para sincronização:', publicCatalog);
-                console.log('🔗 Para sincronizar com GitHub, configure um Gist público com este JSON');
+                // Update all system components with new data
+                generateCatalog();
+                generatePricingList();
+                generateServiceSelect();
+                generatePublicCatalog();
+                updatePublicSalonInfo();
+                
+                console.log('📤 Catálogo sincronizado em todo o sistema:', publicCatalog);
                 
                 // Show sync status to user
                 showSyncStatus('success');
@@ -743,15 +763,21 @@
             
             // Add service
             services.push({ category, name, description, price });
-            saveData();
+            
+            // Update all system components immediately
             generateCatalog();
             generatePricingList();
             generateServiceSelect();
+            generatePublicCatalog();
+            updatePublicSalonInfo();
+            
+            // Save and sync
+            saveData();
             
             // Hide form
             document.getElementById('addServiceForm').classList.add('hidden');
             
-            alert('✅ Serviço adicionado com sucesso!');
+            alert('✅ Serviço adicionado e sincronizado em todo o sistema!');
         }
 
         // Cancel add service
@@ -784,12 +810,17 @@
             service.description = newDescription.trim();
             service.price = price;
             
-            saveData();
+            // Update all system components immediately
             generateCatalog();
             generatePricingList();
             generateServiceSelect();
+            generatePublicCatalog();
+            updatePublicSalonInfo();
             
-            alert('✅ Serviço atualizado com sucesso!');
+            // Save and sync
+            saveData();
+            
+            alert('✅ Serviço atualizado e sincronizado em todo o sistema!');
         }
 
         // Delete service
@@ -799,11 +830,18 @@
             const index = services.findIndex(s => s.category === category && s.name === name);
             if (index !== -1) {
                 services.splice(index, 1);
-                saveData();
+                
+                // Update all system components immediately
                 generateCatalog();
                 generatePricingList();
                 generateServiceSelect();
-                alert('✅ Serviço excluído com sucesso!');
+                generatePublicCatalog();
+                updatePublicSalonInfo();
+                
+                // Save and sync
+                saveData();
+                
+                alert('✅ Serviço excluído e sincronizado em todo o sistema!');
             }
         }
 
@@ -847,16 +885,29 @@
             const serviceIndex = services.findIndex(s => s.category === category && s.name === name);
             if (serviceIndex !== -1) {
                 services[serviceIndex].price = parseFloat(newPrice) || 0;
-                saveData(); // Auto-save when price changes
-                generateServiceSelect(); // Update service select immediately
+                
+                // Update all system components immediately
+                generateCatalog();
+                generateServiceSelect();
+                generatePublicCatalog();
+                
+                // Auto-save when price changes
+                saveData();
             }
         }
 
         // Save prices
         function savePrices() {
+            // Update all system components
+            generateCatalog();
+            generateServiceSelect();
+            generatePublicCatalog();
+            updatePublicSalonInfo();
+            
+            // Save data and sync
             saveData();
-            generateServiceSelect(); // Update service select with new prices
-            alert('✅ Preços salvos com sucesso!');
+            
+            alert('✅ Preços salvos e sincronizados em todo o sistema!');
         }
 
         // Generate service select
@@ -1524,10 +1575,15 @@ ${salonSettings.address}
             salonSettings.phone = phone;
             salonSettings.cancellationPolicy = cancellationPolicy;
 
-            saveData();
+            // Update all system components immediately
             updateHeaderTitle();
+            updatePublicSalonInfo();
+            generatePublicCatalog();
+            
+            // Save and sync
+            saveData();
 
-            alert('✅ Configurações salvas com sucesso!\n\n📱 As novas informações aparecerão nos próximos agendamentos e mensagens do WhatsApp.');
+            alert('✅ Configurações salvas e sincronizadas em todo o sistema!\n\n📱 As novas informações aparecerão no catálogo público, agendamentos e mensagens do WhatsApp.');
         }
 
         // Reset salon settings to default
@@ -1540,11 +1596,16 @@ ${salonSettings.address}
                     cancellationPolicy: 'Cancelamentos com menos de 2h não terão reembolso'
                 };
 
+                // Update all system components immediately
                 loadSalonSettingsForm();
-                saveData();
                 updateHeaderTitle();
+                updatePublicSalonInfo();
+                generatePublicCatalog();
+                
+                // Save and sync
+                saveData();
 
-                alert('✅ Configurações restauradas para o padrão!');
+                alert('✅ Configurações restauradas e sincronizadas em todo o sistema!');
             }
         }
 
@@ -1694,6 +1755,8 @@ ${salonSettings.address}
         // Generate public catalog
         function generatePublicCatalog() {
             const publicCatalogContent = document.getElementById('publicCatalogContent');
+            if (!publicCatalogContent) return;
+            
             const categories = [...new Set(services.map(s => s.category))];
             
             const categoryEmojis = {
@@ -1761,5 +1824,5 @@ ${salonSettings.address}
             window.open(`https://wa.me/?text=${message}`, '_blank');
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e4967130ac585',t:'MTc1NjY2MTc1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'977e5d60815a16b3',t:'MTc1NjY2MjU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
